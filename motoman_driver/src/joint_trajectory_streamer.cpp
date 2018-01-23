@@ -126,12 +126,14 @@ MotomanJointTrajectoryStreamer::~MotomanJointTrajectoryStreamer()
 bool MotomanJointTrajectoryStreamer::disableRobotCB(std_srvs::Trigger::Request &req,
                                            std_srvs::Trigger::Response &res)
 {
+  this->mutex_.lock();
 
   trajectoryStop();
 
   bool ret = motion_ctrl_.setTrajMode(false);  
   res.success = ret;
-  
+
+  this->mutex_.unlock();
   if (!res.success) {
     res.message="Motoman robot was NOT disabled. Please re-examine and retry.";
     ROS_ERROR_STREAM(res.message);
@@ -149,8 +151,10 @@ bool MotomanJointTrajectoryStreamer::disableRobotCB(std_srvs::Trigger::Request &
 bool MotomanJointTrajectoryStreamer::enableRobotCB(std_srvs::Trigger::Request &req,
 						   std_srvs::Trigger::Response &res)
 {
+  this->mutex_.lock();
   bool ret = motion_ctrl_.setTrajMode(true);  
   res.success = ret;
+  this->mutex_.unlock();
   
   if (!res.success) {
     res.message="Motoman robot was NOT enabled. Please re-examine and retry.";
