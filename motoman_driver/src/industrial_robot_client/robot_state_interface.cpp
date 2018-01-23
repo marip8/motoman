@@ -155,7 +155,11 @@ bool RobotStateInterface::init(SmplMsgConnection* connection, std::vector<std::s
 {
   this->joint_names_ = joint_names;
   this->connection_ = connection;
-  connection_->makeConnect();
+
+  if (!connection_->makeConnect())
+  {
+    ROS_WARN("Unable to 'makeConnect' at the moment");
+  }
 
   // initialize message-manager
   if (!manager_.init(connection_))
