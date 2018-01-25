@@ -120,6 +120,7 @@ bool MotomanJointTrajectoryStreamer::init(SmplMsgConnection* connection, const s
 MotomanJointTrajectoryStreamer::~MotomanJointTrajectoryStreamer()
 {
   //TODO Find better place to call StopTrajMode
+  boost::lock_guard<boost::mutex> lock (this->mutex_); // TODO: Possible dead-lock?
   motion_ctrl_.setTrajMode(false);   // release TrajMode, so INFORM jobs can run
 }
 
@@ -373,8 +374,11 @@ bool MotomanJointTrajectoryStreamer::VectorToJointData(const std::vector<double>
 // override send_to_robot to provide controllerReady() and setTrajMode() calls
 bool MotomanJointTrajectoryStreamer::send_to_robot(const std::vector<SimpleMessage>& messages)
 {
-  if (!motion_ctrl_.controllerReady())
-    ROS_ERROR_RETURN(false, "Failed to initialize MotoRos motion, so trajectory ABORTED.\n If safe, call /robot_enable service to (re-)enable Motoplus motion.");
+  {
+    boost::lock_guard<boost::mutex> lock (this->mutex_);
+    if (!motion_ctrl_.controllerReady())
+      ROS_ERROR_RETURN(false, "Failed to initialize MotoRos motion, so trajectory ABORTED.\n If safe, call /robot_enable service to (re-)enable Motoplus motion.");
+  }
 
   return JointTrajectoryStreamer::send_to_robot(messages);
 }
@@ -487,6 +491,7 @@ void MotomanJointTrajectoryStreamer::streamingThread()
 // override trajectoryStop to send MotionCtrl message
 void MotomanJointTrajectoryStreamer::trajectoryStop()
 {
+  boost::lock_guard<boost::mutex> lock (this->mutex_);
   this->state_ = TransferStates::IDLE;  // stop sending trajectory points
   motion_ctrl_.stopTrajectory();
 }
