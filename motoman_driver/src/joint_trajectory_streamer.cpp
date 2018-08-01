@@ -40,6 +40,8 @@
 #include <vector>
 #include <string>
 
+#include <std_msgs/Int16.h>
+
 namespace CommTypes = industrial::simple_message::CommTypes;
 namespace ReplyTypes = industrial::simple_message::ReplyTypes;
 using industrial::joint_data::JointData;
@@ -91,6 +93,8 @@ bool MotomanJointTrajectoryStreamer::init(SmplMsgConnection* connection, const s
 
   enabler_ = node_.advertiseService("/robot_enable", &MotomanJointTrajectoryStreamer::enableRobotCB, this);
 
+  current_idx_pub_ = node_.advertise<std_msgs::Int16>("/current_index", 1, true);
+
   return rtn;
 }
 
@@ -113,6 +117,8 @@ bool MotomanJointTrajectoryStreamer::init(SmplMsgConnection* connection, const s
   disabler_ = node_.advertiseService("/robot_disable", &MotomanJointTrajectoryStreamer::disableRobotCB, this);
 
   enabler_ = node_.advertiseService("/robot_enable", &MotomanJointTrajectoryStreamer::enableRobotCB, this);
+
+  current_idx_pub_ = node_.advertise<std_msgs::Int16>("/current_index", 1, true);
 
   return rtn;
 }
@@ -465,6 +471,11 @@ void MotomanJointTrajectoryStreamer::streamingThread()
         {
           ROS_DEBUG("Point[%d of %d] sent to controller",
                     this->current_point_, static_cast<int>(this->current_traj_.size()));
+
+          std_msgs::Int16 idx_msg;
+          idx_msg.data = this->current_point_;
+          current_idx_pub_.publish(idx_msg);
+
           this->current_point_++;
         }
         else if (reply_status.reply_.getResult() == MotionReplyResults::BUSY)

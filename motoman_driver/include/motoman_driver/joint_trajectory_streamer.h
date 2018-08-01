@@ -171,7 +171,7 @@ protected:
   bool enableRobotCB(std_srvs::Trigger::Request &req,
                      std_srvs::Trigger::Response &res);
 
-
+  ros::Publisher current_idx_pub_;
 };
 
 }  // namespace joint_trajectory_streamer
